@@ -20,16 +20,23 @@ jobs:
 
       - name: Extract ZIP
         run: |
-          mkdir project
-          unzip -o "*.zip" -d project
+          mkdir -p project
+          unzip -o *.zip -d project
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Find Gradle Wrapper
+        run: |
+          GRADLEW=$(find project -type f -name gradlew | head -n 1)
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: gradlew not found in ZIP"
+            exit 1
+          fi
+          chmod +x "$GRADLEW"
+          echo "GRADLEW=$GRADLEW" >> "$GITHUB_ENV"
+          echo "PROJECT_DIR=$(dirname "$GRADLEW")" >> "$GITHUB_ENV"
 
       - name: Build APK
         run: |
-          cd project
-          find . -name gradlew -exec chmod +x {} \;
+          cd "$PROJECT_DIR"
           ./gradlew assembleDebug
 
       - name: Upload APK
